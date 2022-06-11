@@ -15,7 +15,7 @@ if (process.argv.length < 5 && process.argv.length > 3) {
 }
 const password = process.argv[2];
 
-const url = `mongodb+srv://dsabelli:${password}@cluster0.easat67.mongodb.net/the-phonebook?retryWrites=true&w=majority`;
+const url = process.env.MONGODB_URI;
 
 const personSchema = new mongoose.Schema({
   id: Number,
