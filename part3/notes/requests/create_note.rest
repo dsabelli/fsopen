@@ -3,5 +3,6 @@ Content-Type: application/json
 
 {
     "content": "VS Code REST client is pretty good",
+    "date": "new Date()",
     "important": false
 }

@@ -51,14 +51,19 @@ const App = () => {
     } else if (newPerson.number === "") {
       alert("enter a phone number");
     } else {
-      dbService.create(newPerson).then((res) => {
-        setPersons((prevVal) => prevVal.concat(res.data));
-        setNewSearch((prevVal) => prevVal.concat(res.data));
-        setSuccessMsg(`${newPerson.name}'s number was successfully added!`);
-        setTimeout(() => {
-          setSuccessMsg(null);
-        }, 3000);
-      });
+      dbService
+        .create(newPerson)
+        .then((res) => {
+          setPersons((prevVal) => prevVal.concat(res.data));
+          setNewSearch((prevVal) => prevVal.concat(res.data));
+          setSuccessMsg(`${newPerson.name}'s number was successfully added!`);
+          setTimeout(() => {
+            setSuccessMsg(null);
+          }, 3000);
+        })
+        .catch((err) => {
+          setErrMsg(err);
+        });
       setNewName("");
       setNewNumber("");
     }
