@@ -1,4 +1,5 @@
-const LoginForm = (props) => {
+import React from "react";
+const Login = (props) => {
   return (
     <form onSubmit={(e) => props.handleLogin(e)}>
       <div>
@@ -24,4 +25,4 @@ const LoginForm = (props) => {
   );
 };
 
-export default LoginForm;
+export default Login;

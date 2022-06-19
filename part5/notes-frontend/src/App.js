@@ -1,38 +1,53 @@
 import { useState, useEffect } from "react";
-import Note from "./Note";
-import Notification from "./Notification";
-import Footer from "./Footer";
+
+import Note from "./components/Note";
+import Notification from "./components/Notification";
+import LoginForm from "./components/LoginForm";
+import Footer from "./components/Footer";
+import Togglable from "./components/Togglable";
+import NoteForm from "./components/NoteForm";
+
 import noteService from "./services/notes";
 import loginService from "./services/login";
-import NoteForm from "./forms/note";
-import LoginForm from "./forms/login";
-
-import "./App.css";
 
 const App = () => {
   const [notes, setNotes] = useState([]);
-  const [newNote, setNewNote] = useState("a new note...");
+  const [newNote, setNewNote] = useState("");
   const [showAll, setShowAll] = useState(true);
-  const [errorMessage, setErrorMessage] = useState("some error happened...");
+  const [errorMessage, setErrorMessage] = useState(null);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [user, setUser] = useState({ name: "Joe" });
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    noteService.getAll().then((initialNotes) => {
+      setNotes(initialNotes);
+    });
+  }, []);
+
+  useEffect(() => {
+    const loggedUserJSON = window.localStorage.getItem("loggedNoteappUser");
+    if (loggedUserJSON) {
+      const user = JSON.parse(loggedUserJSON);
+      setUser(user);
+      noteService.setToken(user.token);
+    }
+  }, []);
 
   const handleLogin = async (event) => {
     event.preventDefault();
-
     try {
       const user = await loginService.login({
         username,
         password,
       });
-      window.localStorage.setItem("loggedNoteappUser", JSON.stringify(user));
-      noteService.setToken(user.token);
       setUser(user);
+      noteService.setToken(user.token);
+      window.localStorage.setItem("loggedNoteappUser", JSON.stringify(user));
       setUsername("");
       setPassword("");
     } catch (exception) {
-      setErrorMessage("Wrong credentials");
+      setErrorMessage("wrong credentials");
       setTimeout(() => {
         setErrorMessage(null);
       }, 5000);
@@ -43,18 +58,19 @@ const App = () => {
     event.preventDefault();
     const noteObject = {
       content: newNote,
-      date: new Date(),
-      important: Math.random() < 0.5,
+      date: new Date().toISOString(),
+      important: Math.random() > 0.5,
+      id: notes.length + 1,
     };
-    noteService.create(noteObject).then((res) => {
-      setNotes((prevNotes) => prevNotes.concat(res.data));
+
+    noteService.create(noteObject).then((returnedNote) => {
+      setNotes(notes.concat(returnedNote));
       setNewNote("");
     });
   };
 
-  const handleNoteChange = (e) => {
-    console.log(e.target.value);
-    setNewNote(e.target.value);
+  const handleNoteChange = (event) => {
+    setNewNote(event.target.value);
   };
 
   const toggleImportanceOf = (id) => {
@@ -62,7 +78,7 @@ const App = () => {
     const changedNote = { ...note, important: !note.important };
 
     noteService
-      .update(changedNote)
+      .update(id, changedNote)
       .then((returnedNote) => {
         setNotes(notes.map((note) => (note.id !== id ? note : returnedNote)));
       })
@@ -77,43 +93,34 @@ const App = () => {
       });
   };
 
-  const notesToShow = showAll
-    ? notes
-    : notes.filter((note) => note.important === true);
-
-  const noteElements = notesToShow.map((note) => (
-    <Note
-      key={note.id}
-      note={note}
-      toggleImportance={() => toggleImportanceOf(note.id)}
-    />
-  ));
-
-  useEffect(() => {
-    noteService.getAll().then((res) => setNotes(res.data));
-  }, []);
-
-  useEffect(() => {
-    const loggedUserJSON = window.localStorage.getItem("loggedNoteappUser");
-    if (loggedUserJSON) {
-      const user = JSON.parse(loggedUserJSON);
-      setUser(user);
-      noteService.setToken(user.token);
-    }
-  }, []);
+  const notesToShow = showAll ? notes : notes.filter((note) => note.important);
 
   return (
     <div>
       <h1>Notes</h1>
       <Notification message={errorMessage} />
-      {user === null && (
-        <LoginForm
-          handleLogin={handleLogin}
-          username={username}
-          password={password}
-          setUsername={setUsername}
-          setPassword={setPassword}
-        />
+
+      {user === null ? (
+        <Togglable buttonLabel="login">
+          <LoginForm
+            username={username}
+            password={password}
+            handleUsernameChange={({ target }) => setUsername(target.value)}
+            handlePasswordChange={({ target }) => setPassword(target.value)}
+            handleSubmit={handleLogin}
+          />
+        </Togglable>
+      ) : (
+        <div>
+          <p>{user.name} logged in</p>
+          <Togglable buttonLabel="new note">
+            <NoteForm
+              onSubmit={addNote}
+              value={newNote}
+              handleChange={handleNoteChange}
+            />
+          </Togglable>
+        </div>
       )}
 
       <div>
@@ -121,17 +128,16 @@ const App = () => {
           show {showAll ? "important" : "all"}
         </button>
       </div>
-      <ul>{noteElements}</ul>
-      {user !== null && (
-        <div>
-          <p>{user.name} logged-in</p>
-          <NoteForm
-            addNote={addNote}
-            newNote={newNote}
-            handleNoteChange={handleNoteChange}
+      <ul>
+        {notesToShow.map((note) => (
+          <Note
+            key={note.id}
+            note={note}
+            toggleImportance={() => toggleImportanceOf(note.id)}
           />
-        </div>
-      )}
+        ))}
+      </ul>
+
       <Footer />
     </div>
   );

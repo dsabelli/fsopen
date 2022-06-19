@@ -1,6 +1,6 @@
 POST http://localhost:3003/api/blogs
 Content-Type: application/json
-Authorization: bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IkRhbiIsImlkIjoiNjJhYzc4OTA3NmQzNzhhZGJlNTY0N2FhIiwiaWF0IjoxNjU1NDcwMzM1fQ.O48DYrW39hBLBsVWrhVKh9Uu8TDkV256BdZSBWDQ2ak
+Authorization: bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IkRhbiIsImlkIjoiNjJhZTJhNDdkYWRlNDc1YzE1YThlODExIiwiaWF0IjoxNjU1NTgxMjcwfQ.QDyAJC-mQcVPxUVWM_EJaz1iBoxqq4V_ujRhbSvLzrM
 
 {
   "title": "Teaching Fullstack",
