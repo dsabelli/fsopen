@@ -5,6 +5,7 @@ import Login from "./components/Login";
 import blogService from "./services/blogs";
 import loginService from "./services/login";
 import BlogForm from "./components/BlogForm";
+import Togglable from "./components/Togglable";
 
 const App = () => {
   const [blogs, setBlogs] = useState([]);
@@ -32,7 +33,7 @@ const App = () => {
       }, 5000);
     } catch (exception) {
       console.log(exception);
-      setSystemMessage(`$invalid username or password`);
+      setSystemMessage("invalid username or password");
       setTimeout(() => {
         setSystemMessage(null);
       }, 5000);
@@ -43,28 +44,95 @@ const App = () => {
     window.localStorage.clear();
   };
 
-  const handleBlogPost = (e) => {
+  const handleBlogPost = async (e) => {
     e.preventDefault();
     try {
-      blogService.postBlog({ title, author, url });
-
+      const newBlog = await blogService.postBlog({ title, author, url });
+      console.log(newBlog);
+      setBlogs(blogs.concat(newBlog));
       setTitle("");
       setAuthor("");
       setUrl("");
-      setSystemMessage(`Successfully added blog post!`);
+      setSystemMessage("Successfully added blog post!");
       setTimeout(() => {
         setSystemMessage(null);
       }, 5000);
     } catch (exception) {
       console.log(exception);
-      setSystemMessage(`System encountered an error`);
+      setSystemMessage("System encountered an error");
       setTimeout(() => {
         setSystemMessage(null);
       }, 5000);
     }
   };
 
-  const blogElements = blogs.map((blog) => <Blog key={blog.id} blog={blog} />);
+  const handleLikes = async (e) => {
+    const id = e.target.id;
+    e.preventDefault();
+    try {
+      const likedBlog = blogs.filter((blog) => blog.id === id)[0];
+      await blogService.putLike(
+        { ...likedBlog, likes: likedBlog.likes + 1, user: likedBlog.user.id },
+        likedBlog.id
+      );
+      setBlogs((prevBlogs) =>
+        prevBlogs
+          .map((blog) =>
+            blog.id === id ? { ...blog, likes: blog.likes + 1 } : blog
+          )
+          .sort((a, b) => (a.likes < b.likes ? 1 : a.likes > b.likes ? -1 : 0))
+      );
+    } catch (exception) {
+      console.log(exception);
+      setSystemMessage("System encountered an error");
+      setTimeout(() => {
+        setSystemMessage(null);
+      }, 5000);
+    }
+  };
+
+  const handleDelete = async (e) => {
+    const id = e.target.id;
+    e.preventDefault();
+    const deletedBlog = blogs.filter((blog) => blog.id === id)[0];
+    if (
+      window.confirm(`Remove ${deletedBlog.title} by ${deletedBlog.author}?`)
+    ) {
+      try {
+        if (user.username === deletedBlog.user.username) {
+          await blogService.deleteBlog(deletedBlog.id);
+
+          setBlogs((prevBlogs) =>
+            prevBlogs.filter((blog) => blog.id !== deletedBlog.id)
+          );
+        }
+      } catch (exception) {
+        console.log(exception);
+        setSystemMessage("System encountered an error");
+        setTimeout(() => {
+          setSystemMessage(null);
+        }, 5000);
+      }
+    }
+  };
+
+  const toggleVisibility = (id) => {
+    setBlogs((prevBlogs) =>
+      prevBlogs.map((blog) =>
+        blog.id === id ? { ...blog, isVisible: !blog.isVisible } : blog
+      )
+    );
+  };
+
+  const blogElements = blogs.map((blog) => (
+    <Blog
+      key={blog.id}
+      blog={blog}
+      toggleVisibility={toggleVisibility}
+      handleLikes={handleLikes}
+      handleDelete={handleDelete}
+    />
+  ));
 
   useEffect(() => {
     const getBlogs = async () => {
@@ -86,30 +154,35 @@ const App = () => {
   return (
     <div>
       {systemMessage}
+
       {user === null && (
         <div>
           <h2>Login to Application</h2>
-          <Login
-            handleLogin={handleLogin}
-            username={username}
-            password={password}
-            setUsername={setUsername}
-            setPassword={setPassword}
-          />
+          <Togglable buttonLabel="login">
+            <Login
+              handleLogin={handleLogin}
+              username={username}
+              password={password}
+              setUsername={setUsername}
+              setPassword={setPassword}
+            />
+          </Togglable>
         </div>
       )}
       {user !== null && (
         <div>
           <h2>blogs</h2>
-          <BlogForm
-            handleBlogPost={handleBlogPost}
-            setAuthor={setAuthor}
-            setTitle={setTitle}
-            setUrl={setUrl}
-            title={title}
-            author={author}
-            url={url}
-          />
+          <Togglable buttonLabel="new blog">
+            <BlogForm
+              handleBlogPost={handleBlogPost}
+              setAuthor={setAuthor}
+              setTitle={setTitle}
+              setUrl={setUrl}
+              title={title}
+              author={author}
+              url={url}
+            />
+          </Togglable>
           <form>
             <p>
               {user.username} logged in
