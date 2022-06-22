@@ -94,12 +94,17 @@ const App = () => {
   const handleDelete = async (e) => {
     const id = e.target.id;
     e.preventDefault();
+    console.log(user);
     const deletedBlog = blogs.filter((blog) => blog.id === id)[0];
+    console.log(deletedBlog);
     if (
       window.confirm(`Remove ${deletedBlog.title} by ${deletedBlog.author}?`)
     ) {
       try {
-        if (user.username === deletedBlog.user.username) {
+        if (
+          user.username === deletedBlog.user.username ||
+          !deletedBlog.user.username
+        ) {
           await blogService.deleteBlog(deletedBlog.id);
 
           setBlogs((prevBlogs) =>
@@ -124,8 +129,10 @@ const App = () => {
     );
   };
 
-  const blogElements = blogs.map((blog) => (
+  const blogElements = blogs.map((blog, index) => (
     <Blog
+      className="blog"
+      cy={index}
       key={blog.id}
       blog={blog}
       toggleVisibility={toggleVisibility}
@@ -137,7 +144,11 @@ const App = () => {
   useEffect(() => {
     const getBlogs = async () => {
       const blogs = await blogService.getAll();
-      setBlogs(blogs);
+      setBlogs(
+        blogs.sort((a, b) =>
+          a.likes < b.likes ? 1 : a.likes > b.likes ? -1 : 0
+        )
+      );
     };
     getBlogs();
   }, []);
@@ -189,7 +200,7 @@ const App = () => {
               <button onClick={handleLogout}>Log Out</button>
             </p>
           </form>
-          {blogElements}
+          <div className="blogs"> {blogElements}</div>
         </div>
       )}
     </div>

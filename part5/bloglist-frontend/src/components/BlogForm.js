@@ -3,17 +3,19 @@ const BlogForm = (props) => {
   return (
     <form onSubmit={(e) => props.handleBlogPost(e)}>
       <div>
-        title:
+        <label htmlFor="Title">Title:</label>
         <input
+          id="Title"
           type="text"
           value={props.title}
-          name="Username"
+          name="Title"
           onChange={({ target }) => props.setTitle(target.value)}
         />
       </div>
       <div>
-        author:
+        <label htmlFor="Author">Author:</label>
         <input
+          id="Author"
           type="text"
           value={props.author}
           name="Author"
@@ -21,8 +23,9 @@ const BlogForm = (props) => {
         />
       </div>
       <div>
-        url:
+        <label htmlFor="Url">Url:</label>
         <input
+          id="Url"
           type="text"
           value={props.url}
           name="Url"
