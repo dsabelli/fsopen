@@ -1,0 +1,4 @@
+Python has many libraries and tools for the purposes of CI. Pylint is a logical and stylistic linter for Python, but it's a bit slow so many favour PyFlakes instead, which is much faster but is only logical and not stylistic.
+PyTest is a popular testing framework for unit testing and Percy is an End-to-end testing framework.
+Python has many CI tools available to it other than Jenkins and Github Actions, some being: [CircleCi, TeamCity, GitLab, Buddy, Bamboo, Semaphore]
+Whether a setup is better in a self-hosted or a cloud-based environment depends on the size of the project and the resources currently available. If a self-hosted solution is already in use for other projects then it makes sense to keep self-hosted even for a smaller project. If the number of overall projects is small or access to hardware is unavailable then it would make sense to use a cloud-based environment.
