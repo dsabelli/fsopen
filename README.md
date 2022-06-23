@@ -1,1 +1,1 @@
-Repositry for Fullstack Open 2022
+Repository for Fullstack Open 2022
