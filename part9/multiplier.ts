@@ -2,4 +2,7 @@ const multiplier = (a: number, b: number, printText: string) => {
   console.log(printText, a * b);
 };
 
-multiplier(2, 4, "Result is:");
+const a: number = Number(process.argv[2]);
+const b: number = Number(process.argv[3]);
+
+multiplier(a, b, "Result is:");
