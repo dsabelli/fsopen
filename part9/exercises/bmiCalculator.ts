@@ -41,6 +41,8 @@ try {
   console.log(errorMessage);
 }
 
+export default calculateBMI;
+
 //take in height and weight number args
 //multiply args and compare to BMI range
 //return category string depending on the number
