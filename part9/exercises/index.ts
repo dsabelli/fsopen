@@ -1,7 +1,10 @@
 import express from "express";
 import "dotenv/config";
 import calculateBMI from "./bmiCalculator";
+import calculateExercises from "./exerciseCalculator";
 const app = express();
+
+app.use(express.json());
 
 app.get("/hello", (_req: any, res: any) => {
   res.send("Hello Full Stack!");
@@ -14,8 +17,13 @@ app.get("/bmi", (req: any, res: any) => {
   const { weight, height } = req.query;
   const bmi = calculateBMI(height, weight);
   res.json({ weight, height, bmi });
+});
 
-  res.json();
+app.post("/exercises", (req, res) => {
+  const { exercises, target } = req.body;
+
+  const response = calculateExercises(exercises, target);
+  res.json(response);
 });
 
 app.listen(process.env.PORT || 3001, () => {
