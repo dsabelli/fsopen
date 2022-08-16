@@ -28,6 +28,6 @@
   },
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
-    "project": "part9/9c/tsconfig.json"
+    "project": "/Users/dsabelli/Documents/webDev/fsopen/part9/9c/tsconfig.json"
   }
 }
