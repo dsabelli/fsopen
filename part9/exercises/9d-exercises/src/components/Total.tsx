@@ -1,6 +1,6 @@
-import { CourseProps } from "../types";
+import { CoursePartBase } from "../types";
 
-const Total = ({ courseParts }: { courseParts: Array<CourseProps> }) => {
+const Total = ({ courseParts }: { courseParts: Array<CoursePartBase> }) => {
   const courseTotal: number = courseParts.reduce(
     (a, b) => a + b.exerciseCount,
     0

@@ -1,13 +1,12 @@
-import { CourseProps } from "../types";
+import { CoursePart } from "../types";
+import Parts from "./Parts";
 
-const Content = ({ courseParts }: { courseParts: Array<CourseProps> }) => {
-  const courses: Array<JSX.Element> = courseParts.map((course) => (
-    <p key={courseParts.indexOf(course)}>
-      {course.name} {course.exerciseCount}
-    </p>
-  ));
-
-  return <div>{courses}</div>;
+const Content = ({ courseParts }: { courseParts: Array<CoursePart> }) => {
+  return (
+    <div>
+      <Parts courseParts={courseParts} />
+    </div>
+  );
 };
 
 export default Content;
