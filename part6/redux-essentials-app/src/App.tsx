@@ -15,11 +15,11 @@ function App() {
 
   useEffect(() => {
     dispatch(calcTotal());
-  }, [cartItems]);
+  }, [cartItems, dispatch]);
 
   useEffect(() => {
     dispatch(getCartItems());
-  }, []);
+  }, [dispatch]);
 
   if (isLoading) {
     return (
