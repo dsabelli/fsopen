@@ -1,6 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit";
 
-interface isOpen {
+export interface isOpen {
   isOpen: boolean;
 }
 
