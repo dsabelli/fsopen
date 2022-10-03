@@ -1,10 +1,16 @@
 import { ApolloServer, gql, UserInputError } from "apollo-server";
 import { nanoid } from "nanoid";
 
+interface EditAuthor {
+  name: string;
+  setBornTo: number;
+}
+
 interface Author {
   name: string;
   born?: number;
   id: string;
+  bookCount?: number;
 }
 
 interface Book {
@@ -104,20 +110,31 @@ const typeDefs = gql`
   type Book {
     title: String!
     author: String!
-    published: String!
+    published: Int!
     genres: [String!]!
   }
 
   type Author {
     name: String!
+    born: Int
     bookCount: Int!
   }
 
   type Query {
     bookCount: Int!
     authorCount: Int!
-    allBooks: [Book!]!
+    allBooks(author: String, genre: String): [Book!]!
     allAuthors: [Author!]!
+  }
+
+  type Mutation {
+    addBook(
+      title: String!
+      author: String!
+      published: Int!
+      genres: [String!]!
+    ): Book!
+    editAuthor(name: String!, setBornTo: Int!): Author
   }
 `;
 
@@ -125,9 +142,46 @@ const resolvers = {
   Query: {
     bookCount: () => books.length,
     authorCount: () => authors.length,
-    allBooks: () => books,
-    allAuthors: (root: Query, args: Query): Author[] => {
-      return authors;
+    allBooks: (_root: any, args: { author: string; genre: string }) => {
+      if (args.author)
+        return books.filter((book) => book.author === args.author);
+      if (args.genre)
+        return books.filter((book) => book.genres.includes(args.genre));
+      return books;
+    },
+    allAuthors: (): Author[] => {
+      return authors.map((author) => ({
+        ...author,
+        bookCount: books.filter((book) => book.author === author.name).length,
+      }));
+    },
+  },
+  Mutation: {
+    addBook: (_root: any, args: Book): Book => {
+      if (!{ ...args })
+        throw new UserInputError(
+          "include a title, author, publish date, and atleast one genre"
+        );
+      const newBook = { ...args, id: nanoid() };
+      if (newBook) books.concat(newBook);
+      const newAuthor = authors.find(
+        (author) => author.name === newBook.author
+      );
+      if (newAuthor) authors.concat({ name: newAuthor.name, id: nanoid() });
+      return newBook;
+    },
+    editAuthor: (_root: any, args: EditAuthor): Author | null => {
+      if (!{ ...args }) return null;
+      const editAuthor = authors.find((author) => author.name === args.name);
+      if (editAuthor) {
+        authors.map((author) =>
+          author.name === editAuthor.name
+            ? { ...author, born: args.setBornTo }
+            : author
+        );
+        return { ...editAuthor, born: args.setBornTo };
+      }
+      return null;
     },
   },
 };
