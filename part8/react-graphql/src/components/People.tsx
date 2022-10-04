@@ -1,28 +1,17 @@
-import React, { MouseEventHandler, useState } from "react";
+import React, { useState } from "react";
 import { gql, useQuery } from "@apollo/client";
 import { Persons } from "../types";
 import Person from "./Person";
-
-const FIND_PERSON = gql`
-  query findPersonByName($nameToSearch: String!) {
-    findPerson(name: $nameToSearch) {
-      name
-      phone
-      id
-      address {
-        street
-        city
-      }
-    }
-  }
-`;
+import { FIND_PERSON } from "../queries";
 
 const People = ({ persons }: { persons: Persons[] }) => {
   const [nameToSearch, setNameToSearch] = useState("");
+
   const result = useQuery(FIND_PERSON, {
     variables: { nameToSearch },
     skip: !nameToSearch,
   });
+
   if (nameToSearch && result.data) {
     return (
       <Person
@@ -31,6 +20,7 @@ const People = ({ persons }: { persons: Persons[] }) => {
       />
     );
   }
+
   return (
     <div>
       <h2>Persons</h2>
