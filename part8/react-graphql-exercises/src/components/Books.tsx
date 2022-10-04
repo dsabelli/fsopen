@@ -9,11 +9,11 @@ const Books = ({
   show: boolean | string;
   handleError: Function;
 }) => {
+  const result = useQuery(ALL_BOOKS);
   if (!show) {
     return null;
   }
 
-  const result = useQuery(ALL_BOOKS);
   let books;
 
   if (result.loading) {
@@ -22,6 +22,7 @@ const Books = ({
 
   if (result.data) {
     books = result.data.allBooks;
+    console.log(books);
   }
 
   if (result.error) handleError(result.error.message);
