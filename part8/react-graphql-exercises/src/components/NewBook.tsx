@@ -1,11 +1,17 @@
 import { useState } from "react";
 
-const NewBook = ({ show }: { show: string }) => {
+const NewBook = ({
+  show,
+  handleError,
+}: {
+  show: boolean | string;
+  handleError: Function;
+}) => {
   const [title, setTitle] = useState("");
   const [author, setAuthor] = useState("");
   const [published, setPublished] = useState("");
   const [genre, setGenre] = useState("");
-  const [genres, setGenres] = useState([]);
+  const [genres, setGenres] = useState([] as string[]);
 
   if (!show) {
     return null;
