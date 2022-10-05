@@ -1,5 +1,8 @@
 import { ApolloServer, gql, UserInputError } from "apollo-server";
+import mongoose, { ConnectOptions } from "mongoose";
+import Person from "./models/person";
 import { nanoid } from "nanoid";
+import { infoLogger, errorLogger } from "./utils/logger";
 
 interface Person {
   name: string;
@@ -31,6 +34,22 @@ let persons: Person[] = [
     id: "3d599471-3436-11e9-bc57-8b80ba54c431",
   },
 ];
+const MONGODB_URI = `mongodb://localhost:27017/graphql_practice`;
+infoLogger("connecting to", MONGODB_URI);
+
+const connectDB = async () => {
+  try {
+    await mongoose.connect(MONGODB_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      family: 4,
+    } as ConnectOptions);
+    infoLogger("connected to MongoDB");
+  } catch (error) {
+    errorLogger("error connection to MongoDB:");
+  }
+};
+connectDB();
 
 const typeDefs = gql`
   enum YesNo {
