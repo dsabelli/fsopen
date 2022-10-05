@@ -1,5 +1,12 @@
 import { ApolloServer, gql, UserInputError } from "apollo-server";
 import { nanoid } from "nanoid";
+import { infoLogger, errorLogger } from "./utils/logger";
+import mongoose, { ConnectOptions } from "mongoose";
+import jwt, { JwtPayload } from "jsonwebtoken";
+import Book from "./models/Book";
+import Author from "./models/Author";
+
+const JWT_SECRET = "fanpw8f48a4da3w3";
 
 interface EditAuthor {
   name: string;
@@ -9,16 +16,16 @@ interface EditAuthor {
 interface Author {
   name: string;
   born?: number;
-  id: string;
   bookCount?: number;
+  _id: mongoose.Types.ObjectId;
 }
 
 interface Book {
   title: string;
-  author: string;
+  author: Author;
   published: number;
   genres: string[];
-  id: string;
+  _id: mongoose.Types.ObjectId;
 }
 
 interface Query {
@@ -28,96 +35,35 @@ interface Query {
   allAuthors: Author[];
 }
 
-let authors: Author[] = [
-  {
-    name: "Robert Martin",
-    id: "afa51ab0-344d-11e9-a414-719c6709cf3e",
-    born: 1952,
-  },
-  {
-    name: "Martin Fowler",
-    id: "afa5b6f0-344d-11e9-a414-719c6709cf3e",
-    born: 1963,
-  },
-  {
-    name: "Fyodor Dostoevsky",
-    id: "afa5b6f1-344d-11e9-a414-719c6709cf3e",
-    born: 1821,
-  },
-  {
-    name: "Joshua Kerievsky", // birthyear not known
-    id: "afa5b6f2-344d-11e9-a414-719c6709cf3e",
-  },
-  {
-    name: "Sandi Metz", // birthyear not known
-    id: "afa5b6f3-344d-11e9-a414-719c6709cf3e",
-  },
-];
+const MONGODB_URI = `mongodb://localhost:27017/graphql_exercises`;
+infoLogger("connecting to", MONGODB_URI);
 
-let books: Book[] = [
-  {
-    title: "Clean Code",
-    published: 2008,
-    author: "Robert Martin",
-    id: "afa5b6f4-344d-11e9-a414-719c6709cf3e",
-    genres: ["refactoring"],
-  },
-  {
-    title: "Agile software development",
-    published: 2002,
-    author: "Robert Martin",
-    id: "afa5b6f5-344d-11e9-a414-719c6709cf3e",
-    genres: ["agile", "patterns", "design"],
-  },
-  {
-    title: "Refactoring, edition 2",
-    published: 2018,
-    author: "Martin Fowler",
-    id: "afa5de00-344d-11e9-a414-719c6709cf3e",
-    genres: ["refactoring"],
-  },
-  {
-    title: "Refactoring to patterns",
-    published: 2008,
-    author: "Joshua Kerievsky",
-    id: "afa5de01-344d-11e9-a414-719c6709cf3e",
-    genres: ["refactoring", "patterns"],
-  },
-  {
-    title: "Practical Object-Oriented Design, An Agile Primer Using Ruby",
-    published: 2012,
-    author: "Sandi Metz",
-    id: "afa5de02-344d-11e9-a414-719c6709cf3e",
-    genres: ["refactoring", "design"],
-  },
-  {
-    title: "Crime and punishment",
-    published: 1866,
-    author: "Fyodor Dostoevsky",
-    id: "afa5de03-344d-11e9-a414-719c6709cf3e",
-    genres: ["classic", "crime"],
-  },
-  {
-    title: "The Demon ",
-    published: 1872,
-    author: "Fyodor Dostoevsky",
-    id: "afa5de04-344d-11e9-a414-719c6709cf3e",
-    genres: ["classic", "revolution"],
-  },
-];
+const connectDB = async () => {
+  try {
+    await mongoose.connect(MONGODB_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      family: 4,
+    } as ConnectOptions);
+    infoLogger("connected to MongoDB");
+  } catch (error) {
+    errorLogger("error connection to MongoDB:");
+  }
+};
+connectDB();
 
 const typeDefs = gql`
-  type Book {
-    title: String!
-    author: String!
-    published: Int!
-    genres: [String!]!
-  }
-
   type Author {
     name: String!
     born: Int
     bookCount: Int!
+  }
+
+  type Book {
+    title: String!
+    author: Author!
+    published: Int!
+    genres: [String!]!
   }
 
   type Query {
@@ -140,48 +86,47 @@ const typeDefs = gql`
 
 const resolvers = {
   Query: {
-    bookCount: () => books.length,
-    authorCount: () => authors.length,
-    allBooks: (_root: any, args: { author: string; genre: string }) => {
-      if (args.author)
-        return books.filter((book) => book.author === args.author);
-      if (args.genre)
-        return books.filter((book) => book.genres.includes(args.genre));
-      return books;
+    bookCount: async (): Promise<number> => (await Book.find({})).length,
+    authorCount: async (): Promise<number> => (await Author.find({})).length,
+    allBooks: async (
+      _root: any,
+      args: { author: string; genre: string }
+    ): Promise<Book[]> => {
+      if (args.author) return await Book.find({ author: args.author });
+      if (args.genre) return await Book.find({ genres: args.genre });
+      return await Book.find({});
     },
-    allAuthors: (): Author[] => {
-      return authors.map((author) => ({
-        ...author,
-        bookCount: books.filter((book) => book.author === author.name).length,
-      }));
+    allAuthors: async (): Promise<Author[]> => {
+      return await Author.find({});
     },
   },
   Mutation: {
-    addBook: (_root: any, args: Book): Book => {
+    addBook: async (_root: any, args: Book): Promise<boolean> => {
       if (!{ ...args })
         throw new UserInputError(
           "include a title, author, publish date, and atleast one genre"
         );
-      const newBook = { ...args, id: nanoid() };
-      if (newBook) books.concat(newBook);
-      const newAuthor = authors.find(
-        (author) => author.name === newBook.author
-      );
-      if (newAuthor) authors.concat({ name: newAuthor.name, id: nanoid() });
-      return newBook;
-    },
-    editAuthor: (_root: any, args: EditAuthor): Author | null => {
-      if (!{ ...args }) return null;
-      const editAuthor = authors.find((author) => author.name === args.name);
-      if (editAuthor) {
-        authors.map((author) =>
-          author.name === editAuthor.name
-            ? { ...author, born: args.setBornTo }
-            : author
-        );
-        return { ...editAuthor, born: args.setBornTo };
+      const newBook = new Book({ ...args });
+
+      const author = (await Author.findOne({ name: args.author }))
+        ? null
+        : new Author({ name: args.author });
+      author?.save();
+      if (newBook) {
+        newBook.save();
+        return true;
       }
-      return null;
+      return false;
+    },
+    editAuthor: async (_root: any, args: EditAuthor): Promise<boolean> => {
+      if (!{ ...args }) return false;
+      const author = await Author.findOne({ name: args.name });
+      if (author) {
+        author.born = args.setBornTo;
+        author.save();
+        return true;
+      }
+      return false;
     },
   },
 };
