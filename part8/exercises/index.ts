@@ -14,6 +14,7 @@ interface EditAuthor {
 }
 
 interface Author {
+  save(): unknown;
   name: string;
   born?: number;
   bookCount?: number;
@@ -101,32 +102,38 @@ const resolvers = {
     },
   },
   Mutation: {
-    addBook: async (_root: any, args: Book): Promise<boolean> => {
+    addBook: async (_root: any, args: Book): Promise<Book | any> => {
       if (!{ ...args })
         throw new UserInputError(
           "include a title, author, publish date, and atleast one genre"
         );
-      const newBook = new Book({ ...args });
-
-      const author = (await Author.findOne({ name: args.author }))
-        ? null
-        : new Author({ name: args.author });
-      author?.save();
-      if (newBook) {
-        newBook.save();
-        return true;
-      }
-      return false;
+      let author: Author;
+      const existingAuthor = await Author.findOne({ name: args.author });
+      existingAuthor
+        ? (author = existingAuthor)
+        : (author = new Author({ name: args.author, bookCount: 1 }));
+      if (author.bookCount) author.bookCount++;
+      await author.save();
+      let book = new Book({ ...args, author: author });
+      await book.save();
+      book = await book.populate("author");
+      return book;
     },
-    editAuthor: async (_root: any, args: EditAuthor): Promise<boolean> => {
-      if (!{ ...args }) return false;
+    editAuthor: async (
+      _root: any,
+      args: EditAuthor
+    ): Promise<Author | null> => {
+      if (!{ ...args })
+        throw new UserInputError("include author name and birth year");
       const author = await Author.findOne({ name: args.name });
+      console.log(author);
+
       if (author) {
         author.born = args.setBornTo;
-        author.save();
-        return true;
+        await author.save();
+        console.log(author);
       }
-      return false;
+      return author;
     },
   },
 };
